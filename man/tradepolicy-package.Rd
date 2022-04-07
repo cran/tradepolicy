@@ -6,15 +6,13 @@
 \alias{tradepolicy-package}
 \title{tradepolicy: Replication of 'An Advanced Guide To Trade Policy Analysis'}
 \description{
-Datasets from An Advanced Guide to Trade Policy Analysis
-    (Year: 2016, ISBN: 978-92-870-4367-2) by Yotov, et al. and functions to 
-    report regression summaries with clustered robust standard errors.
+Datasets from An Advanced Guide to Trade Policy Analysis (Year: 2016, ISBN: 978-92-870-4367-2) by Yotov, et al. and functions to report regression summaries with clustered robust standard errors.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://r.tiid.org/R_structural_gravity/}
-  \item Report bugs at \url{https://github.com/pachamaltese/tradepolicy/issues/}
+  \item Report bugs at \url{https://github.com/pachadotdev/tradepolicy/issues/}
 }
 
 }

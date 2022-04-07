@@ -1,6 +1,6 @@
 Package: tradepolicy
 Title: Replication of 'An Advanced Guide To Trade Policy Analysis'
-Version: 0.5.0
+Version: 0.6.0
 Authors@R: c( 
         person(given = "Mauricio",
                family = "Vargas",
@@ -24,17 +24,17 @@ Description: Datasets from An Advanced Guide to Trade Policy Analysis
     (Year: 2016, ISBN: 978-92-870-4367-2) by Yotov, et al. and functions to 
     report regression summaries with clustered robust standard errors.
 URL: https://r.tiid.org/R_structural_gravity/
-BugReports: https://github.com/pachamaltese/tradepolicy/issues/
+BugReports: https://github.com/pachadotdev/tradepolicy/issues/
 License: CC BY 4.0
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Imports: magrittr, tibble, ggplot2, dplyr, tidyr, purrr, cli, crayon,
-        sandwich, lmtest, broom, msm, rstudioapi
+        fixest (>= 0.10.4), sandwich, broom, msm, rstudioapi
 Suggests: testthat, covr
 Depends: R (>= 4.0)
 LazyData: true
 NeedsCompilation: no
-Packaged: 2021-05-26 06:29:02 UTC; pacha
+Packaged: 2022-04-07 00:38:06 UTC; pacha
 Author: Mauricio Vargas [aut, cre] (<https://orcid.org/0000-0003-1017-7574>),
   Alexey Kravchenko [ths],
   Constanza Prado [ths],
@@ -42,4 +42,4 @@ Author: Mauricio Vargas [aut, cre] (<https://orcid.org/0000-0003-1017-7574>),
   The United Nations [dtc, cph, fnd]
 Maintainer: Mauricio Vargas <mavargas11@uc.cl>
 Repository: CRAN
-Date/Publication: 2021-05-27 07:10:02 UTC
+Date/Publication: 2022-04-07 06:10:02 UTC
