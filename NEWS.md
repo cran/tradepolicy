@@ -1,4 +1,10 @@
-# tradepolicu 0.6.0
+# tradepolicy 0.6.1
+
+Improvements
+* Moves general equilibrium parameters to the start of the examples. This is helps to write clearer code.
+* I added dta files to repository
+
+# tradepolicy 0.6.0
 
 Breaking changes
 * Uses fixest estimation as default
@@ -20,7 +26,6 @@ Removals
 
 # tradepolicy 0.4
 
-* This package is the continuation of yotover
 * The tp_fixed_effects() function was re-written to allow more flexibility when extracting fixed effects
 * Allows creating the database in non-default directories
 * Less exported functions to avoid user distraction, focusing on usage over total flexibility

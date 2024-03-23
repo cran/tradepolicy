@@ -10,27 +10,33 @@
 #' @param etfe Exporter time fixed effects column (defaults to "exp_year")
 #' @param itfe Importer time fixed effects column (defaults to "imp_year")
 #'
+#' @examples
+#' # See the ebook
+#'
 #' @return A list
 #' @export
-
 tp_summary_app_1 <- function(formula, data, method = "ppml", pair = "pair_id",
-                            etfe = "exp_year", itfe = "imp_year") {
+                             etfe = "exp_year", itfe = "imp_year") {
   stopifnot(any(method %in% c("ols", "ppml")))
+
+  formula <- as.formula(formula)
 
   if (!all(class(data) %in% "data.frame")) {
     data <- as.data.frame(data)
   }
 
   if (method == "ols") {
-    fit <- feols(as.formula(formula),
-                         data = data,
-                         cluster = data[, pair])
+    fit <- feols(formula,
+      data = data,
+      cluster = data[, pair]
+    )
   }
 
   if (method == "ppml") {
-    fit <- fepois(as.formula(formula),
+    fit <- fepois(formula,
       data = data,
-      cluster = data[, pair])
+      cluster = data[, pair]
+    )
   }
 
   is_ppml <- any(fit$method %in% "fepois")
@@ -42,27 +48,34 @@ tp_summary_app_1 <- function(formula, data, method = "ppml", pair = "pair_id",
   # For PPML get fitted values of the linear index, not of trade
   data$predict2 <- (predict(fit, type = "link"))^2
 
-  form_reset <- as.character(update(fit$fml_all$linear, ~ predict2 + .))
+  # Assuming form_reset is constructed up to this point as a character string
+  form_reset <- paste0(formula[2], " ~ ", formula[3], " + predict2")
 
+  # For fixed effects, if applicable
   if (length(as.character(fit$fml_all$fixef)) > 0) {
-    form_reset <- paste0(form_reset[2], " ~ ", form_reset[3], " | ",  as.character(fit$fml_all$fixef)[2])
-  } else {
-    form_reset <- paste0(form_reset[2], " ~ ", form_reset[3])
+    form_reset <- paste0(form_reset, " | ", as.character(fit$fml_all$fixef)[2])
   }
+
+  # Convert the character string back into a formula
+  form_reset <- as.formula(form_reset)
 
   if (!is_ppml) {
-    fit_reset <- feols(as.formula(form_reset),
-                               data = data,
-                               cluster = data[, pair])
+    fit_reset <- feols(form_reset,
+      data = data,
+      cluster = data[, pair]
+    )
   } else {
-    fit_reset <- fepois(as.formula(form_reset),
-                                data = data,
-                                cluster = data[, pair])
+    fit_reset <- fepois(form_reset,
+      data = data,
+      cluster = data[, pair]
+    )
   }
 
-  res <- fit_reset$coeftable["predict2", "Pr(>|t|)"]
+  res <- ifelse(method == "ols", fit_reset$coeftable["predict2", "Pr(>|t|)"],
+    fit_reset$coeftable["predict2", "Pr(>|z|)"]
+  )
 
-  r2 <- if (is_ppml) {
+  rsq <- if (is_ppml) {
     # Also adapted from http://personal.lse.ac.uk/tenreyro/r2.do
     actual <- as.numeric(data$trade)
     predicted <- as.numeric(fit$fitted.values)
@@ -71,15 +84,16 @@ tp_summary_app_1 <- function(formula, data, method = "ppml", pair = "pair_id",
     r2(fit, "r2")
   }
 
-  return(
+  structure(
     list(
       tidy_coefficients = tidy(fit) %>% mutate_if(is.numeric, function(x) round(x, 3)),
       nobs = nrow(data),
-      rsquared = round(r2, 3),
+      rsquared = round(rsq, 3),
       etfe = any(grepl(paste0("^", etfe), fit$fixef_vars)),
       itfe = any(grepl(paste0("^", itfe), fit$fixef_vars)),
       reset_pval = round(res, 3)
-    )
+    ),
+    class = "tp_summary_app_1"
   )
 }
 
@@ -99,26 +113,32 @@ tp_summary_app_1 <- function(formula, data, method = "ppml", pair = "pair_id",
 #' @param intr Intra-national distance column (defaults to "log_dist_intra")
 #' @param csfe Country-specific fixed effects (defaults to "intra_pair")
 #'
+#' @examples
+#' # See the ebook
+#'
 #' @return A list
 #' @export
 tp_summary_app_2 <- function(formula, data, method = "ppml",
-                                 pair = "pair_id", etfe = "exp_year",
-                                 itfe = "imp_year", dist = "log_dist",
-                                 intr = "log_dist_intra", csfe = "intra_pair") {
+                             pair = "pair_id", etfe = "exp_year",
+                             itfe = "imp_year", dist = "log_dist",
+                             intr = "log_dist_intra", csfe = "intra_pair") {
   stopifnot(any(method %in% c("ols", "ppml")))
+
+  formula <- as.Formula(formula)
 
   if (!all(class(data) %in% "data.frame")) {
     data <- as.data.frame(data)
   }
 
   if (method == "ols") {
-    fit <- feols(as.formula(formula),
-                 data = data,
-                 cluster = data[, pair])
+    fit <- feols(formula,
+      data = data,
+      cluster = data[, pair]
+    )
   }
 
   if (method == "ppml") {
-    fit <- fepois(as.formula(formula),
+    fit <- fepois(formula,
       data = data,
       cluster = data[, pair]
     )
@@ -150,7 +170,7 @@ tp_summary_app_2 <- function(formula, data, method = "ppml",
   beta_tstat <- beta_pct_chg / beta_std_err
   beta_pval <- pnorm(-abs(beta_tstat)) + (1 - pnorm(abs(beta_tstat)))
 
-  return(
+  structure(
     list(
       tidy_coefficients = tidy(fit) %>% mutate_if(is.numeric, function(x) round(x, 3)),
       nobs = nrow(data),
@@ -159,7 +179,8 @@ tp_summary_app_2 <- function(formula, data, method = "ppml",
       pcld_std_err_pval = round(beta_pval, 3),
       intr = any(grepl(paste0("^", intr, "|^", csfe), names(fit$coefficients))),
       csfe = any(grepl(paste0("^", csfe), names(fit$coefficients)))
-    )
+    ),
+    class = "tp_summary_app_2"
   )
 }
 
@@ -180,14 +201,19 @@ tp_summary_app_2 <- function(formula, data, method = "ppml",
 #' @param intr Intra-national distance column (defaults to "log_dist_intra")
 #' @param brdr Inter-national borders column (defaults to "intl_brdr")
 #'
+#' @examples
+#' # See the ebook
+#'
 #' @return A list
 #' @export
 tp_summary_app_3 <- function(formula, data, method = "ppml",
-                                 pair = "pair_id", pair2 = "pair_id_2",
-                                 etfe = "exp_year", itfe = "imp_year",
-                                 dist = "log_dist", intr = "log_dist_intra",
-                                 brdr = "intl_brdr") {
+                             pair = "pair_id", pair2 = "pair_id_2",
+                             etfe = "exp_year", itfe = "imp_year",
+                             dist = "log_dist", intr = "log_dist_intra",
+                             brdr = "intl_brdr") {
   stopifnot(any(method %in% c("ols", "ppml")))
+
+  formula <- as.Formula(formula)
 
   if (!all(class(data) %in% "data.frame")) {
     data <- as.data.frame(data)
@@ -195,15 +221,17 @@ tp_summary_app_3 <- function(formula, data, method = "ppml",
 
   if (method == "ols") {
     fit <- feols(
-      as.formula(formula),
+      formula,
       data = data,
-      cluster = data[, pair])
+      cluster = data[, pair]
+    )
   }
 
   if (method == "ppml") {
-    fit <- fepois(as.formula(formula),
+    fit <- fepois(formula,
       data = data,
-      cluster = data[, pair])
+      cluster = data[, pair]
+    )
   }
 
   contains_intr <- any(grepl(paste0("^", intr, "|^", brdr, "|^", pair2), names(fit$coefficients)))
@@ -228,23 +256,75 @@ tp_summary_app_3 <- function(formula, data, method = "ppml",
     beta_tstat <- beta_sum / beta_std_err
     beta_pval <- pnorm(-abs(beta_tstat)) + (1 - pnorm(abs(beta_tstat)))
 
-    return(
-      list(
-        tidy_coefficients = tidy(fit) %>% mutate_if(is.numeric, function(x) round(x, 3)),
-        nobs = nrow(data),
-        total_rta_effect = round(beta_sum, 3),
-        trta_std_err = round(beta_std_err, 3),
-        trta_std_err_pval = round(beta_pval, 3),
-        intr = contains_intr
-      )
+    out <- list(
+      tidy_coefficients = tidy(fit) %>% mutate_if(is.numeric, function(x) round(x, 3)),
+      nobs = nrow(data),
+      total_rta_effect = round(beta_sum, 3),
+      trta_std_err = round(beta_std_err, 3),
+      trta_std_err_pval = round(beta_pval, 3),
+      intr = contains_intr
     )
   } else {
-    return(
-      list(
-        tidy_coefficients = tidy(fit) %>% mutate_if(is.numeric, function(x) round(x, 3)),
-        nobs = nrow(data),
-        intr = contains_intr
-      )
+    out <- list(
+      tidy_coefficients = tidy(fit) %>% mutate_if(is.numeric, function(x) round(x, 3)),
+      nobs = nrow(data),
+      intr = contains_intr
     )
   }
+
+  structure(out, class = "tp_summary_app_3")
+}
+
+# this method uses kable to present everything in a single table
+#' @export
+#' @noRd
+print.tp_summary_app_1 <- function(x, ...) {
+  d1 <- kable(x$tidy_coefficients)
+
+  d2 <- kable(tibble(
+    nobs = x$nobs,
+    rsquared = x$rsquared,
+    etfe = x$etfe,
+    itfe = x$itfe,
+    reset_pval = x$reset_pval
+  ))
+
+  cat(d1, "\n", d2, sep = "\n")
+}
+
+#' @export
+#' @noRd
+print.tp_summary_app_2 <- function(x, ...) {
+  d1 <- kable(
+    x$tidy_coefficients %>%
+      # filter obs in term that start with intra_pair
+      filter(!grepl("^intra_pair", term))
+  )
+
+  d2 <- kable(tibble(
+    nobs = x$nobs,
+    pct_chg_log_dist = x$pct_chg_log_dist,
+    pcld_std_err = x$pcld_std_err,
+    pcld_std_err_pval = x$pcld_std_err_pval,
+    intr = x$intr,
+    csfe = x$csfe
+  ))
+
+  cat(d1, "\n", d2, sep = "\n")
+}
+
+#' @export
+#' @noRd
+print.tp_summary_app_3 <- function(x, ...) {
+  d1 <- kable(x$tidy_coefficients)
+
+  d2 <- kable(tibble(
+    nobs = x$nobs,
+    total_rta_effect = x$total_rta_effect,
+    trta_std_err = x$trta_std_err,
+    trta_std_err_pval = x$trta_std_err_pval,
+    intr = x$intr
+  ))
+
+  cat(d1, "\n", d2, sep = "\n")
 }

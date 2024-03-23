@@ -49,7 +49,9 @@ NULL
 #' @importFrom broom tidy
 #' @importFrom sandwich vcovCL
 #' @importFrom msm deltamethod
-#' @importFrom dplyr mutate_if
+#' @importFrom dplyr filter mutate_if tibble
+#' @importFrom Formula as.Formula
+#' @importFrom knitr kable
 NULL
 
 # Funs for ebook
